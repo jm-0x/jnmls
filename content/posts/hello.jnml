@@ -1,0 +1,27 @@
+---
+title: A website in OCaml
+date: 2026-03-02
+---
+
+# Hello world
+
+I needed somewhere to write things. Linkedin felt too weird and I don't use twitter. I decided to create a little personal website and give OCaml a shot. This is it.
+
+# Why OCaml?
+
+I don't really know. I've always been fascinated by functional programming. I spent some time with Haskell, but it never really clicked. OCaml looked like a very cool alternative and turns out, it's great for parsing stuff.
+
+# How it works
+
+It's not advanced, it's actually the opposite. Very simple and boring. But systems you use tend to be simple and boring. 
+
+I wrote a parser for my own (super simple) markdown that supports just what I need. Headings, code and math. It's a recursive descent parser that just matches the current token to decide what to parse, then calls other parsing functions (and itself) recursively to handle nested or repeated structures. Like this:
+@code ocaml
+let parse (tokens : token list) : Ast.document =
+    let (meta, rest) = parse_meta tokens in
+    let (body, _) = parse_blocks rest in
+    { meta; body }
+@end
+*the main parse function, parses meta tags and blocks (which then parse inlines)*
+
+All the code is on [github](https://github.com/jm-0x/jnmls)
