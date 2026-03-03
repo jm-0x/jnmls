@@ -181,3 +181,9 @@ ul li time {
     color: var(--fg-muted);
     font-size: 0.85rem;
 }
+
+footer {
+    margin-top: 2rem;
+    color: var(--fg-muted);
+    font-size: 0.9rem;
+}
