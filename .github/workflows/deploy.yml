@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/jm-0x/jnmls-ci:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
