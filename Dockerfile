@@ -14,5 +14,4 @@ RUN pip install --break-system-packages manim
 
 # Init opam for root
 RUN opam init --disable-sandboxing --bare -y
-RUN opam switch create 5.2 ocaml-base-compiler.5.2.0
-RUN eval $(opam env)
+RUN opam switch set 5.2
