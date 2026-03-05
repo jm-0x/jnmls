@@ -5,17 +5,17 @@ date: 2026-03-02
 
 # Hello world
 
-I needed somewhere to write things. Linkedin felt too weird and I don't use twitter. I decided to create a little personal website and give OCaml a shot. This is it.
+I needed somewhere to write things. LinkedIn felt too weird and I don't use twitter. I also had some requirements for the posts I wanted to create. Nothing advanced, but I wanted it to be so easy to include code, math or visualizations that I didn't really have to think about it. I ended up creating my own markdown inspired language.
 
 # Why OCaml?
 
-I had some quite specific things I needed for text I wrote. Nothing advanced, but I wanted it to be so easy to include code, math or visualizations (maybe interactive elements, but I haven't gotten that far) that I didn't really have to think about it. Markdown is obviously quite easy to write, so that was a great starting point. I also really wanted to try OCaml. I've long been fascinated with functional programming. Haskell never really clicked, but OCaml seemed like a great fit for this project. It turns out, it's great for parsing stuff! 
+I've long been fascinated with functional programming. Haskell never really clicked, but OCaml seemed like a practical alternative. Since I had decided I needed my own custom language I was essentially going to write a very simple compiler. OCaml turned out to be a perfect choice for this, it's great for parsing.
 
 # How it works
 
 It's not advanced, it's actually the opposite. Very simple and boring. But systems you use tend to be simple and boring. 
 
-The whole pipeline is just a translation layer. We take in a my markdown-esque-syntax and we spit out static html files.
+The whole pipeline is just a translation layer. We take in my markdown-esque syntax and we spit out static html files.
 
 ## Lexer
 @code(ocaml)
@@ -57,6 +57,10 @@ let rec parse_blocks (tokens : token list) : Ast.block list * token list =
     (Ast.Paragraph content :: more, rest2)
 @end
 
-Every parser returns the parsed result *and* the remaining tokens. That's so parser can be chained without shared state. This feels a bit new if you have not touched functional programming before.
+Every parser returns the parsed result *and* the remaining tokens. That's how parsers chain without shared state. This feels a bit new if you have not touched functional programming before.
+
+From the parser we return an AST and with that just string replaces to create our HTML document.
 
 All the code is on [github](https://github.com/jm-0x/jnmls)
+
+*this page was written in the language it describes :D*
