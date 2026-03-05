@@ -23,11 +23,15 @@ let rec replace_placeholder placeholder replacement template =
     in
     find 0
 
-let process_post content_dir output_dir filename =
+let process_post content_dir output_dir quality filename =
     let slug = Filename.chop_suffix filename ".jnml" in
     let source = read_file (Filename.concat content_dir filename) in
     let tokens = Jnmls.Lexer.tokenize source in
     let doc = Jnmls.Parser.parse tokens in
+    let manim_dir = Filename.concat output_dir "assets/manim" in
+    let resolved_body = Jnmls.Manim.resolve_all
+        ~output_dir:manim_dir ~quality doc.body in
+    let doc = {doc with body = resolved_body} in
     let body_html = Jnmls.Html.render_document doc in
     let template = read_file "static/post.html" in
     let html = template
@@ -51,7 +55,8 @@ let render_index posts =
     replace_placeholder "{{posts}}" posts_html template
 
 let () =
-    let content_dir = "content/posts" in
+    let quality = if Array.mem "--release" Sys.argv then "h" else "l" in
+    let content_dir = "content/posts" in 
     let output_dir = "_site" in
     if not (Sys.file_exists output_dir) then
         Sys.mkdir output_dir 0o755;
@@ -64,7 +69,7 @@ let () =
         let files = Sys.readdir content_dir in
         let posts = Array.to_list files
             |> List.filter (fun f -> Filename.check_suffix f ".jnml")
-            |> List.map (process_post content_dir output_dir)
+            |> List.map (process_post content_dir output_dir quality)
             |> List.sort (fun (m1, _) (m2, _) ->
                 compare m2.Jnmls.Ast.date m1.Jnmls.Ast.date)
         in

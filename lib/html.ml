@@ -15,14 +15,25 @@ let rec render_block (block : Ast.block) : string =
         "<" ^ tag ^ ">" ^ render_inlines content ^ "</" ^ tag ^ ">"
     | Ast.Paragraph inlines ->
         "<p>" ^ render_inlines inlines ^ "</p>"
-    | Ast.CodeBlock { language; code } ->
-        let lang_attr = match language with
-            | Some l -> " class=\"language-" ^ l ^ "\""
-            | None -> ""
-        in
-        "<pre><code" ^ lang_attr ^ ">" ^ code ^ "</code></pre>"
-    | Ast.BlockMath s ->
-        "<div class=\"math\">\\[" ^ s ^ "\\]</div>"
+    | Ast.AtBlock { kind; source; options } ->
+        (match kind, source with
+        | Ast.Code, Ast.Inline code ->
+            let lang_attr = match options with
+                | l :: _ -> " class=\"language-" ^ l ^ "\""
+                | [] -> ""
+            in
+            "<pre><code" ^ lang_attr ^ ">" ^ code ^ "</code></pre>"
+        | Ast.Code, Ast.File path ->
+            "<pre><code><!-- @code ref: " ^ path ^ " --></code></pre>"
+        | Ast.Math, Ast.Inline math ->
+            "<div class=\"math\">\\[" ^ math ^ "\\]</div>"
+        | Ast.Math, Ast.File path ->
+            "<div class=\"math\"><!-- @math ref: " ^ path ^ " --></div>"
+        | Ast.Manim, Ast.File path ->
+            let loop_attr = if List.mem "loop" options then " loop" else "" in
+            "<div class=\"manim\"><video src=\"/assets/manim/" ^ path ^ "\" autoplay muted playsinline" ^ loop_attr ^ "></video></div>"
+        | Ast.Manim, Ast.Inline _ ->
+            "<div class=\"manim\"><!-- manim: unresolved inline --></div>")
     | Ast.Blockquote blocks ->
         "<blockquote>" ^ render_blocks blocks ^ "</blockquote>"
     | Ast.Image { alt; url } ->

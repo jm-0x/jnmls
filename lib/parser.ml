@@ -107,33 +107,28 @@ let rec parse_blocks (tokens : token list) : Ast.block list * token list =
     let (content, rest2) = parse_inlines rest in
     let (more, rest3) = parse_blocks rest2 in
     (Ast.Heading { level = n; content } :: more, rest3)
-  | Code_start lang :: rest ->
-    let rec collect toks acc =
-      match toks with
-      | Code_end :: rest -> (acc, rest)
-      | Text s :: rest -> collect rest (acc ^ s)
-      | Newline :: rest -> collect rest (acc ^ "\n")
-      | _ :: rest -> collect rest acc
-      | [] -> (acc, [])
+  | At_block(kind, args, body) :: rest ->
+    let (more, rest2) = parse_blocks rest in
+    let options = match args with
+      | Some a -> String.split_on_char ',' a |> List.map String.trim
+      | None -> []
     in
-    let (code, rest2) = collect rest "" in
-    let (more, rest3) = parse_blocks rest2 in
-    (Ast.CodeBlock { language = lang; code } :: more, rest3)
+    let atblock_kind = match kind with
+      | "code" -> Ast.Code
+      | "math" -> Ast.Math
+      | "manim" -> Ast.Manim
+      | _ -> Ast.Code (* fallback *)
+    in
+    let source = match body with
+      | Some content -> Ast.Inline content
+      | None ->
+        let file = match options with f :: _ -> f | [] -> "" in
+        Ast.File file
+    in
+    (Ast.AtBlock { kind = atblock_kind; source; options } :: more, rest2)
   | Triple_dash :: rest ->
     let (more , rest2) = parse_blocks rest in
     (Ast.HorizontalRule :: more, rest2) 
-  | Dollar :: Dollar :: rest ->
-    let rec collect toks acc = 
-        match toks with
-        | Dollar :: Dollar :: rest -> (acc, rest)
-        | Text s :: rest -> collect rest (acc ^ s)
-        | Newline :: rest -> collect rest (acc ^ "\n")
-        | [] -> (acc, [])
-        | _ :: rest -> collect rest acc 
-    in 
-    let (math, rest2) = collect rest "" in
-    let (more, rest3) = parse_blocks rest2 in
-    (Ast.BlockMath math :: more, rest3)
   | Bang :: Open_bracket :: rest ->
     let (alt, rest2) = collect_until
       (fun toks -> match toks with Close_bracket :: r -> Some r | _ -> None)
@@ -155,7 +150,7 @@ let rec parse_blocks (tokens : token list) : Ast.block list * token list =
   | _ -> 
     let (content, rest) = parse_inlines tokens in
     let (more, rest2) = parse_blocks rest in
-    (Ast.Paragraph content :: more, rest2)   
+    (Ast.Paragraph content :: more, rest2) 
 
 let parse (tokens : token list) : Ast.document =
     let (meta, rest) = parse_meta tokens in

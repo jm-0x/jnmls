@@ -1,2 +1,3 @@
-(library 
-  (name jnmls))
+(library
+ (name jnmls)
+ (libraries unix))

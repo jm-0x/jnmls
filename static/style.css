@@ -187,3 +187,15 @@ footer {
     color: var(--fg-muted);
     font-size: 0.9rem;
 }
+
+.manim {
+    margin: 1.5rem 0;
+    background: #000;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.manim video {
+    width: 100%;
+    display: block;
+}

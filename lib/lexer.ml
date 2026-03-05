@@ -11,8 +11,7 @@ type token =
     | Gt
     | Heading_marker of int
     | Triple_dash
-    | Code_start of string option
-    | Code_end
+    | At_block of string * string option * string option
     | Newline
     | Blank_line
     | Eof
@@ -51,43 +50,64 @@ let tokenize (source: string) : token list =
         else
           Text "-" :: aux (pos + 1)
       | '@' ->
+        let known_blocks = ["code"; "math"; "manim"] in
         let rec read_word p = 
-          if p < len && source.[p] <> ' ' && source.[p] <> '\n' then read_word(p+1)
+          if p < len && source.[p] <> ' ' && source.[p] <> '\n' && source.[p] <> '(' then read_word(p+1)
           else p
         in 
         let word_end = read_word(pos+1) in
-        let word = String.sub source (pos + 1 ) (word_end - pos - 1) in
-        (match word with
-        | "end" -> Code_end :: aux word_end
-        | "code" ->
-          let lang =
-            if word_end < len && source.[word_end] = ' ' then
-              let lang_start = word_end + 1 in
-              let rec read_lang p =
-                if p < len && source.[p] <> '\n' then read_lang (p + 1)
-                else p
+        let word = String.sub source (pos + 1) (word_end - pos - 1) in
+        if List.mem word known_blocks then
+          (* Read optional (args) *)
+          let (args, after_args) =
+            if word_end < len && source.[word_end] = '(' then
+              let rec find_close p =
+                if p >= len then (None, word_end)
+                else if source.[p] = ')' then
+                  let arg = String.trim (String.sub source (word_end + 1) (p - word_end - 1)) in
+                  (Some arg, p + 1)
+                else find_close (p + 1)
               in
-              let lang_end = read_lang lang_start in
-              Some (String.sub source lang_start (lang_end - lang_start), lang_end)
+              find_close (word_end + 1)
             else
-              None
+              (None, word_end)
           in
-          let start_pos = match lang with
-            | Some (_, p) -> p
-            | None -> word_end
+          (* Skip whitespace and one newline to get to body start *)
+          let body_start =
+            let p = ref after_args in
+            while !p < len && source.[!p] = ' ' do incr p done;
+            if !p < len && source.[!p] = '\n' then incr p;
+            !p
           in
-          let start_pos = if start_pos < len && source.[start_pos] = '\n' then start_pos + 1 else start_pos in
+          (* Scan for @end at start of line, stop if we hit another known block keyword *)
+          let at_line_start p =
+            p = 0 || (p > 0 && source.[p - 1] = '\n')
+          in
           let rec find_end p =
-            if p + 3 < len && source.[p] = '@' && source.[p+1] = 'e' && source.[p+2] = 'n' && source.[p+3] = 'd' then p
-            else if p >= len then p
+            if p >= len then None
+            else if source.[p] = '@' && at_line_start p then
+              let kw_end = read_word (p + 1) in
+              let kw = String.sub source (p + 1) (kw_end - p - 1) in
+              if kw = "end" then Some p
+              else if List.mem kw known_blocks then None
+              else find_end (p + 1)
             else find_end (p + 1)
           in
-          let end_pos = find_end start_pos in
-          let code = String.sub source start_pos (end_pos - start_pos) in
-          let lang_opt = match lang with Some (l, _) -> Some l | None -> None in
-          let after_end = if end_pos + 4 <= len then end_pos + 4 else len in
-          Code_start lang_opt :: Text code :: Code_end :: aux after_end        
-          | _ -> Text ("@" ^ word) :: aux word_end)
+          (match find_end body_start with
+          | Some end_pos ->
+            let body = String.sub source body_start (end_pos - body_start) in
+            let after_end = end_pos + 4 in
+            let after_end = if after_end < len && source.[after_end] = '\n' then after_end + 1 else after_end in
+            At_block(word, args, Some body) :: aux after_end
+          | None ->
+            (match args with
+            | Some _ -> At_block(word, args, None) :: aux after_args
+            | None -> Text ("@" ^ word) :: aux word_end))
+        else if word = "end" then
+          (* Stray @end — skip *)
+          aux word_end
+        else
+          Text ("@" ^ word) :: aux word_end
       | _ ->
         let rec read_text p =
           if p < len &&
