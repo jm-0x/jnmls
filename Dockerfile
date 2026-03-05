@@ -11,3 +11,8 @@ RUN apt-get update -qq && apt-get install -y -qq \
 
 # Manim
 RUN pip install --break-system-packages manim
+
+# Init opam for root
+RUN opam init --disable-sandboxing --bare -y
+RUN opam switch create 5.2 ocaml-base-compiler.5.2.0
+RUN eval $(opam env)
