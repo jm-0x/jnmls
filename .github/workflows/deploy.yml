@@ -7,22 +7,26 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jm-0x/jnmls-ci:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup OCaml
-        uses: ocaml/setup-ocaml@v3
-        with:
-          ocaml-compiler: "5.2"
-
-      - name: Install dependencies
+      - name: Install OCaml deps
         run: opam install . --deps-only --with-test
 
-      - name: Build
-        run: opam exec -- dune build
+      - name: Cache Manim renders
+        uses: actions/cache@v4
+        with:
+          path: _site/assets/manim
+          key: manim-${{ hashFiles('content/**/*.py', 'content/**/*.jnml') }}
+          restore-keys: |
+            manim-
 
-      - name: Generate site
-        run: opam exec -- dune exec ./bin/main.exe
+      - name: Build and generate
+        run: |
+          opam exec -- dune build
+          opam exec -- dune exec ./bin/main.exe
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
