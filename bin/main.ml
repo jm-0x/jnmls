@@ -42,7 +42,7 @@ let process_post content_dir output_dir quality filename =
     let post_dir = Filename.concat output_dir slug in
     if not (Sys.file_exists post_dir) then Sys.mkdir post_dir 0o755;
     write_file (Filename.concat post_dir "index.html") html;
-    Printf.printf "  %s → /%s/\n" filename slug;
+    Printf.printf "  %s → /%s/\n%!" filename slug;
     (doc.meta, slug)
 
 let render_index posts =
@@ -61,11 +61,11 @@ let () =
     if not (Sys.file_exists output_dir) then
         Sys.mkdir output_dir 0o755;
     if not (Sys.file_exists content_dir) then begin
-        Printf.printf "No content directory found, generating empty site.\n";
+        Printf.printf "No content directory found, generating empty site.\n%!";
         let index_html = render_index [] in
         write_file (Filename.concat output_dir "index.html") index_html;
     end else begin
-        Printf.printf "Building site...\n";
+        Printf.printf "Building site...\n%!";
         let files = Sys.readdir content_dir in
         let posts = Array.to_list files
             |> List.filter (fun f -> Filename.check_suffix f ".jnml")
@@ -86,5 +86,5 @@ let () =
                 end
             ) static_files
         end;
-        Printf.printf "Done! %d posts generated.\n" (List.length posts)
+        Printf.printf "Done! %d posts generated.\n%!" (List.length posts)
     end
