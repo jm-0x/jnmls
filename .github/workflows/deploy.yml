@@ -28,6 +28,9 @@ jobs:
         run: |
           opam exec -- dune build
           opam exec -- dune exec ./bin/main.exe
+          
+      - name: Install Node.js
+        run: apt-get update -qq && apt-get install -y -qq nodejs npm
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
